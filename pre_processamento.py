@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import glob
+import os
 
 def calibration(path):
 
@@ -32,37 +33,67 @@ def calibration(path):
 
     return(cv2.calibrateCamera(objPoints, imgPoints, image.shape[::-1], cameraMatrix=None, distCoeffs=None, flags=(cv2.CALIB_FIX_K3 + cv2.CALIB_ZERO_TANGENT_DIST)))
 
-def undistort(mtx, dist):
+def undistort(mtx, dist, distortedImage):
 
-    for file, i in zip(glob.glob('C:\\Users\\Pedro\\Documents\\UnB\\2020_1\\PVC\\Trabalho 1\\trabalho1_imagens\\Frames\\*.jpg'), range(10)):
+    h,  w = distortedImage.shape[:2]
+    newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
-        img = cv2.imread(file)
-        h,  w = img.shape[:2]
-        newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
+    # undistort
+    undistortedImage = cv2.undistort(distortedImage, mtx, dist, None, newcameramtx)
 
-        # undistort
-        dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
+    # crop the image
+    #x,y,w,h = roi
+    #dst = dst[y:y+h, x:x+w]
+    return undistortedImage
 
-        # crop the image
-        #x,y,w,h = roi
-        #dst = dst[y:y+h, x:x+w]
-        cv2.imshow("teste", dst)
-        cv2.waitKey(0)
-        cv2.imwrite("calibResultUndistort" + str(i) + ".png", dst)
+def generateUndistortedImagesFromVideo(mtx, dist, videoPath, cameraName):
+    print('Generating Undistorted Images for Camera: ' + cameraName)
 
-#Paths for image datasets
-paths = ['C:\\Users\\Pedro\\Documents\\UnB\\2020_1\\PVC\\Trabalho 1\\trabalho1_imagens\\Calibration1\\*.jpg',
-         'C:\\Users\\Pedro\\Documents\\UnB\\2020_1\\PVC\\Trabalho 1\\trabalho1_imagens\\Calibration2\\*.jpg']
+    path = createFolder(cameraName)
 
-#paths = []
-#paths.append(input("Caminho para o dataset 1: ") + "\\*.jpg")
-#paths.append(input("\nCaminho para o dataset 2: ") + "\\*.jpg")
+    cap = cv2.VideoCapture(videoPath)
+    i = 0
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret == False:
+            break
 
-ret1, mtx1, dist1, rvecs1, tvecs1 = calibration(paths[0])
-print(f"\ndist1: {dist1}")
+        undistortedImage = undistort(mtx, dist, frame)
+        cv2.imwrite(path + '/' + cameraName + 'Undistorted' + str(i) + '.jpg', undistortedImage)
+        i+=1
+ 
+    cap.release()
+    cv2.destroyAllWindows()
 
-ret2, mtx2, dist2, rvecs2, tvecs2 = calibration(paths[1])
-print(f"\ndist2: {dist2}")
+def createFolder(folderName):
+    path = os.getcwd()
 
-undistort(mtx2, dist2)
+    try:
+        if not os.path.exists(path + '/' + folderName + 'Undistorted'):
+            os.mkdir(path + '/' + folderName + 'Undistorted')
+            return path + '/' + folderName + 'Undistorted'
+        else:
+            return path + '/' + folderName + 'Undistorted'
+
+    except OSError:
+        print ("Creation of the directory %s failed" % (path + folderName))
+    else:
+        print ("Successfully created the directory %s " % (path + folderName))
+
+
+
+if __name__ == "__main__":
+
+    paths = []
+    paths.append(input("Caminho para o dataset 1: ") + "/*.jpg")
+    paths.append(input("\nCaminho para o dataset 2: ") + "/*.jpg")
+
+    ret1, mtx1, dist1, rvecs1, tvecs1 = calibration(paths[0])
+    print(f"\ndist1: {dist1}")
+    generateUndistortedImagesFromVideo(mtx1, dist1, '/home/tom/Downloads/camera1.webm', 'camera1')
+    
+    ret2, mtx2, dist2, rvecs2, tvecs2 = calibration(paths[1])
+    print(f"\ndist2: {dist2}")
+    generateUndistortedImagesFromVideo(mtx2, dist2, '/home/tom/Downloads/camera2.webm', 'camera2')
+
 
