@@ -38,10 +38,10 @@ def undistort(mtx, dist, distortedImage):
     h,  w = distortedImage.shape[:2]
     newcameramtx, roi=cv2.getOptimalNewCameraMatrix(mtx,dist,(w,h),1,(w,h))
 
-    # undistort
+    #Undistort
     undistortedImage = cv2.undistort(distortedImage, mtx, dist, None, newcameramtx)
 
-    # crop the image
+    #Crop image
     #x,y,w,h = roi
     #dst = dst[y:y+h, x:x+w]
     return undistortedImage
@@ -80,9 +80,49 @@ def createFolder(folderName):
     else:
         print ("Successfully created the directory %s " % (path + folderName))
 
+def extractImagePoints():
 
+    #Get clicks on image from set 1
+    img1 = cv2.imread('/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera1Undistorted/camera1Undistorted300.jpg')
+    cv2.namedWindow('imageCam1')
+    cv2.setMouseCallback('imageCam1', imageClick, param=1)
+
+    while(1):
+
+        cv2.imshow('imageCam1', img1)
+        if cv2.waitKey(20) & 0xFF == 27: break
+    cv2.destroyWindow('imageCam1')
+
+    #Get clicks on image from set 2
+    img2 = cv2.imread('/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera2Undistorted/camera2Undistorted100.jpg')
+    cv2.namedWindow('imageCam2')
+    cv2.setMouseCallback('imageCam2', imageClick, param=2)
+
+    while(1):
+
+        cv2.imshow('imageCam2', img2)
+        if cv2.waitKey(20) & 0xFF == 27: break
+    cv2.destroyWindow('imageCam2')
+
+def imageClick(event, x, y, flags, param):
+
+    #Check if left mouse button was clicked and stores RGB
+    if event == cv2.EVENT_LBUTTONDOWN:
+
+        if param == 1:
+
+            imgPointsCam1.append((x, y))
+
+        elif param == 2:
+
+            imgPointsCam2.append((x, y))
 
 if __name__ == "__main__":
+
+    global imgPointsCam1
+    global imgPointsCam2
+    imgPointsCam1 = []
+    imgPointsCam2 = []
 
     paths = []
     paths.append(input("Caminho para o dataset 1: ") + "/*.jpg")
@@ -90,10 +130,14 @@ if __name__ == "__main__":
 
     ret1, mtx1, dist1, rvecs1, tvecs1 = calibration(paths[0])
     print(f"\ndist1: {dist1}")
-    generateUndistortedImagesFromVideo(mtx1, dist1, '/home/tom/Downloads/camera1.webm', 'camera1')
+    #generateUndistortedImagesFromVideo(mtx1, dist1, '/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera1.webm', 'camera1')
     
     ret2, mtx2, dist2, rvecs2, tvecs2 = calibration(paths[1])
     print(f"\ndist2: {dist2}")
-    generateUndistortedImagesFromVideo(mtx2, dist2, '/home/tom/Downloads/camera2.webm', 'camera2')
+    #generateUndistortedImagesFromVideo(mtx2, dist2, '/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera2.webm', 'camera2')
+
+    extractImagePoints()
+
+    print(f"Image points 1: {imgPointsCam1}\nImage points 2: {imgPointsCam2}")
 
 
