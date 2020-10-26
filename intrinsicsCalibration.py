@@ -48,20 +48,16 @@ def saveCalibrationFile(path):
     #Calibrate Camera 2
     ret2, mtx2, dist2, rvecs2, tvecs2 = calibration(path[1], "Camera 2")
 
-    if (ret1 == True and ret2 == True):
+  
+    dic = {"cameraMatrix1": mtx1.tolist(), "cameraMatrix2": mtx2.tolist(), "distortionVector1": dist1.tolist(), "distortionVector2": dist2.tolist()}
+    dumpDic = json.dumps(dic)
 
-        dic = {"cameraMatrix1": mtx1.tolist(), "cameraMatrix2": mtx2.tolist(), "distortionVector1": dist1.tolist(), "distortionVector2": dist2.tolist()}
-        dumpDic = json.dumps(dic)
+    with open('intrinsicsCalibration.json', 'w') as file:
 
-        with open('intrinsicsCalibration.json', 'w') as file:
+        json.dump(dumpDic, file)
 
-            json.dump(dumpDic, file)
+    print("\nCalibration file generated!")
 
-        print("\nCalibration file generated!")
-
-    else:
-
-        print("One of the calibrations has failed. Please, check the path to your dataset and try again.")
 
 if __name__ == "__main__":
 

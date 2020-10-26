@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import json
 
+
+
 def stereoCalibration():
 
 	print("STEREO CALIBRATION...")
@@ -101,13 +103,13 @@ def result(images, F):
 	epilines2 = cv2.computeCorrespondEpilines(pts2.reshape(-1, 1, 2), 2, F)
 	epilines2 = epilines2.reshape(-1, 3)
 	drawLines(img2, epilines2, colors[0:3])
-	drawLines(img1, epilines2, colors[0:3])
+	#drawLines(img1, epilines2, colors[0:3])
 
 	# find epilines corresponding to points in left image and draw them on the right image
 	epilines1 = cv2.computeCorrespondEpilines(pts1.reshape(-1, 1, 2), 1, F)
 	epilines1 = epilines1.reshape(-1, 3)
 	drawLines(img1, epilines1, colors[3:6])
-	drawLines(img2, epilines1, colors[3:6])
+	#drawLines(img2, epilines1, colors[3:6])
 
 	while(1):
 		cv2.imshow("image 1", img1)
@@ -128,20 +130,18 @@ if __name__ == "__main__":
 	imgPointsCam1 = []
 	imgPointsCam2 = []
 
-	getImagePoints(['./camera1/camera1159.jpg', './camera2/camera224.jpg'])
-	print(f"1: {imgPointsCam1}\n2: {imgPointsCam2}\n")
-
-	retVal, cm1, dc1, cm2, dc2, r, t, e, f = stereoCalibration()
-	print(f"\nE: {e}\nF: {f}")
-
-	imgPointsCam1 = []
-	imgPointsCam2 = []
-
 	#getImagePoints(['./camera1/camera1159.jpg', './camera2/camera224.jpg'])
 	getImagePoints(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'])
 
+	print(f"1: {imgPointsCam1}\n2: {imgPointsCam2}\n")
+	retVal, cm1, dc1, cm2, dc2, r, t, e, f = stereoCalibration()
+	print(f"\nE: {e}\nF: {f}")
+
 	#result(['./camera1/camera1159.jpg', './camera2/camera224.jpg'], f)
 	result(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'], f)
+
+
+
 
 
 
