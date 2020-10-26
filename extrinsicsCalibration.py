@@ -86,11 +86,6 @@ def getCamPosition():
 	cameraPosition2 = -np.matrix(rotMatrix2).T * np.matrix(tVecs2)
 	print(f"\nrVecs {rVecs2}\ntVecs {tVecs2}\nrotMatrix {rotMatrix2}\ncamPos {cameraPosition2}")
 
-	if ret1 == False or ret2 == False:
-
-		print("Error calculating extrinsic parameters! Operation aborted!")
-		exit(1)
-
 	return rVecs1, tVecs1, rotMatrix1, cameraPosition1, rVecs2, tVecs2, rotMatrix2, cameraPosition2
 
 def readJson(file):

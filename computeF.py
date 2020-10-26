@@ -12,6 +12,7 @@ def stereoCalibration():
 
 	objectPoints = np.array([[0.0, 0.0, 0.0], [0.0, 1.4, 0.0], [2.6, 0.0, 0.0], [2.6, 1.4, 0.0]], dtype=np.float32)
 
+	print(f"\nStereo calibration finished!")
 	return cv2.stereoCalibrate([objectPoints], [np.array(imgPointsCam1, dtype=np.float32)], [np.array(imgPointsCam2, dtype=np.float32)],
 	       mtx1, dist1, mtx2, dist2, (1280, 720), flags=cv2.CALIB_FIX_INTRINSIC)
 
@@ -85,30 +86,29 @@ def drawLines(img, lines, colors):
 
 def result(images, F):
 
-	#Blue, green, red, cyan, yellow, magenta
-	colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
+	#Blue, green, red, black, cyan, yellow, magenta, purple
+	colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 0, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255), (226, 43, 138)]
 	img1 = cv2.imread(images[0])
 	img2 = cv2.imread(images[1])
 
-	print(img1.shape)
-	print(img2.shape)
+	print(f"\nGenerating epilines images...")
 
 	# get 3 image points of interest from each image and draw them
-	pts1 = np.asarray([imgPointsCam1[0], imgPointsCam1[1], imgPointsCam1[2]])
-	pts2 = np.asarray([imgPointsCam2[0], imgPointsCam2[1], imgPointsCam2[2]])
-	drawPoints(img1, pts1, colors[0:3])
-	drawPoints(img2, pts2, colors[3:6])
+	pts1 = np.asarray([imgPointsCam1[0], imgPointsCam1[1], imgPointsCam1[2], imgPointsCam1[3]])
+	pts2 = np.asarray([imgPointsCam2[0], imgPointsCam2[1], imgPointsCam2[2], imgPointsCam2[3]])
+	drawPoints(img1, pts1, colors[0:4])
+	drawPoints(img2, pts2, colors[4:8])
 
 	# find epilines corresponding to points in right image and draw them on the left image
-	epilines2 = cv2.computeCorrespondEpilines(pts2.reshape(-1, 1, 2), 2, F)
+	epilines2 = cv2.computeCorrespondEpilines(pts1.reshape(-1, 1, 2), 1, F)
 	epilines2 = epilines2.reshape(-1, 3)
-	drawLines(img2, epilines2, colors[0:3])
+	drawLines(img2, epilines2, colors[0:4])
 	#drawLines(img1, epilines2, colors[0:3])
 
 	# find epilines corresponding to points in left image and draw them on the right image
-	epilines1 = cv2.computeCorrespondEpilines(pts1.reshape(-1, 1, 2), 1, F)
+	epilines1 = cv2.computeCorrespondEpilines(pts2.reshape(-1, 1, 2), 2, F)
 	epilines1 = epilines1.reshape(-1, 3)
-	drawLines(img1, epilines1, colors[3:6])
+	drawLines(img1, epilines1, colors[4:8])
 	#drawLines(img2, epilines1, colors[3:6])
 
 	while(1):
@@ -130,14 +130,12 @@ if __name__ == "__main__":
 	imgPointsCam1 = []
 	imgPointsCam2 = []
 
-	#getImagePoints(['./camera1/camera1159.jpg', './camera2/camera224.jpg'])
 	getImagePoints(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'])
+	#print(f"1: {imgPointsCam1}\n2: {imgPointsCam2}\n")
 
-	print(f"1: {imgPointsCam1}\n2: {imgPointsCam2}\n")
 	retVal, cm1, dc1, cm2, dc2, r, t, e, f = stereoCalibration()
-	print(f"\nE: {e}\nF: {f}")
+	#print(f"\nE: {e}\nF: {f}")
 
-	#result(['./camera1/camera1159.jpg', './camera2/camera224.jpg'], f)
 	result(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'], f)
 
 
