@@ -9,7 +9,7 @@ def readIntrinsics(file):
 		data = json.load(file)
 		data = json.loads(data)
 
-	return np.array(data["cameraMatrix1"]), np.array(data["cameraMatrix2"]), np.array(data["distortionVector1"]), np.array(data["distortionVector2"])
+	return np.array(data["cameraMatrix1"]), np.array(data["cameraMatrix2"])
 
 def readExtrinsics(file):
 
@@ -18,97 +18,64 @@ def readExtrinsics(file):
 		data = json.load(file)
 		data = json.loads(data)
 
-	return np.array(data["rVecs1"]), np.array(data["tVecs1"]), np.array(data["rotMatrix1"]), np.array(data["cameraPosition1"]), \
-		   np.array(data["rVecs2"]), np.array(data["tVecs2"]), np.array(data["rotMatrix2"]), np.array(data["cameraPosition2"])
+	return np.array(data["tVecs1"]), np.array(data["rotMatrix1"]), \
+		   np.array(data["tVecs2"]), np.array(data["rotMatrix2"])
 
-def getImagePoints():
+def getWorldCoordinates(coord1, coord2):
 
-	images = ['./camera1Undistorted/camera1Undistorted300.jpg', './camera2Undistorted/camera2Undistorted100.jpg']
-
-	for image, i in zip(images, [1, 2]):
-
-		print("\nLoading image...")
-
-		#Get clicks on image from set 1 and 2
-		img1 = cv2.imread(image)
-		cv2.namedWindow('select points')
-		cv2.setMouseCallback('select points', imageClick, param=i)
-
-		while(1):
-
-			cv2.imshow('select points', img1)
-			if cv2.waitKey(20) & 0xFF == 27: 
-
-				cv2.destroyWindow('select points')
-				break 
-
-			elif(i == 1 and len(imgPointsCam1) == 1) or (i == 2 and len(imgPointsCam2) == 1):
-
-				cv2.destroyWindow('select points')
-				break
-
-def imageClick(event, x, y, flags, param):
-
-    if event == cv2.EVENT_LBUTTONDOWN:
-
-        if param == 1:
-
-            imgPointsCam1.append((x, y))
-
-        elif param == 2:
-
-            imgPointsCam2.append((x, y))
-
-def getWorldBountify(mtx1, rotMatrix1):
-
-	camMat = np.asarray(mtx1)
-	iRot = np.linalg.inv(rotMatrix1)
-	iCam = np.linalg.inv(camMat)
-
-	uvPoint = np.ones((3, 1))
-
-	# Image point
-	uvPoint[0, 0] = imgPoints[0][0]
-	uvPoint[1, 0] = imgPoints[0][1]
-
-	tempMat = np.matmul(np.matmul(iRot, iCam), uvPoint)
-	tempMat2 = np.matmul(iRot, tVecs1)
-
-	s = tempMat2[2, 0] / tempMat[2, 0]
-	wcPoint = np.matmul(iRot, (np.matmul(s * iCam, uvPoint) - tVecs1))
-
-	print(wcPoint)
-
-def computeProjMatrix(mtx, rotMatrix, tVecs):
-
-	#print(f"\nrotMatrix: {rotMatrix}")
-	#print(f"\ntVecs: {tVecs}")
-
-	aux = np.concatenate((rotMatrix, tVecs), axis=1)
-	#print(f"\nConcat: {aux}")
-
-	#print(f"\n\nRes: {np.matmul(mtx, aux)}")
-
-	return np.matmul(mtx, aux)
-
-if __name__ == "__main__":
-
-	global imgPointsCam1
-	global imgPointsCam2
-	imgPointsCam1 = []
-	imgPointsCam2 = []
-	getImagePoints()
-
-	mtx1, mtx2, dist1, dist2 = readIntrinsics('intrinsicsCalibration.json')
-	rVecs1, tVecs1, rotMatrix1, cameraPosition1, rVecs2, tVecs2, rotMatrix2, cameraPosition2 = readExtrinsics('extrinsicsCalibration.json')
-
-	#getWorldBountify(mtx1, rotMatrix1)
 	projMatrix1 = computeProjMatrix(mtx1, rotMatrix1, tVecs1)
 	projMatrix2 = computeProjMatrix(mtx2, rotMatrix2, tVecs2)
 
-	coordinates = cv2.triangulatePoints(projMatrix1, projMatrix2, imgPointsCam1[0], imgPointsCam2[0])
+	coordinates = cv2.triangulatePoints(projMatrix1, projMatrix2, coord1, coord2)
 
-	answer = np.array([coordinates[i]/coordinates[3] for i in range(3)])
+	return np.array((coordinates[i]/coordinates[3] for i in range(3)))
 
-	print(f"\n{answer}")
+def computeProjMatrix(mtx, rotMatrix, tVecs):
 
+	aux = np.concatenate((rotMatrix, tVecs), axis=1)
+
+	return np.matmul(mtx, aux)
+
+'''
+O script que determina as coordenadas de mundo deve receber os
+vetores dos trackers para ambas as câmeras. Esses terão, nece-
+ssariamente, o mesmo número de valores. A função do tracker de-
+ve rodar a rotina de sincronizar as câmeras e retornar vetores
+sincronizados, logo, com o mesmo comprimento.
+'''
+def adjustArrays(array1, array2):
+
+	output = []
+
+	for i in range(len(array1)):
+
+		if array1[i] == (-1, -1) or array2[i] == (-1, -1):
+
+			output[i] = (-1, -1, -1)
+
+		else:
+
+			output[i] = getWorldCoordinates(array1[i], array2[i])
+
+	return output
+
+if __name__ == "__main__":
+
+'''
+Pra facilitar a declaracao e chamada de funções, removi variáveis
+ que não estavam sendo usadas como rVecs, camPos e dist.
+'''
+	global mtx1
+	global mtx2
+	global tVecs1
+	global tVecs2
+	global rotMatrix1
+	global rotMatrix2
+
+	mtx1, mtx2 = readIntrinsics('intrinsicsCalibration.json')
+	tVecs1, rotMatrix1, tVecs2, rotMatrix2 = readExtrinsics('extrinsicsCalibration.json')
+	#arrayCam1, arrayCam2 = readTrackedArrays()
+
+	coord = getWorldCoordinates(arrayCam1, arrayCam2)
+
+	print(f"\n{coord}")
