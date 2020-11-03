@@ -6,63 +6,78 @@ import imutils
 import time
 import cv2
 
-vs = cv2.VideoCapture("/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera1.webm")
+def trackObject(path):
 
-initBB = None
-updateFlag = True
-coordinates = []
+    vs = cv2.VideoCapture(path)
 
-while True:
+    initBB = None
+    updateFlag = True
+    coordinates = []
 
-    if updateFlag == True:
-        ret, frame = vs.read()
+    while True:
 
-        if not ret:
-            break
+        if updateFlag == True:
+            ret, frame = vs.read()
 
-        frame = imutils.resize(frame, width=500)
-        (H, W) = frame.shape[:2]
+            if not ret:
+                break
 
-        if initBB is not None:
+            frame = cv2.resize(frame, (1280, 720))
+            (H, W) = frame.shape[:2]
 
-            updateFlag = True
-            (success, box) = tracker.update(frame)
+            if initBB is not None:
 
-            if success:
+                updateFlag = True
+                (success, box) = tracker.update(frame)
 
-                (x, y, w, h) = [int(v) for v in box]
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                coordinates.append((x, y))
+                if success:
+
+                    (x, y, w, h) = [int(v) for v in box]
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    coordinates.append((x, y))
+
+                else:
+
+                    coordinates.append((-1, -1))
+                    updateFlag = False
 
             else:
 
                 coordinates.append((-1, -1))
                 updateFlag = False
 
-        else:
+        cv2.imshow("Frame", frame)
+        key = cv2.waitKey(1) & 0xFF
 
-            coordinates.append((-1, -1))
-            updateFlag = False
+        if key == ord("s"):
 
-    cv2.imshow("Frame", frame)
-    key = cv2.waitKey(1) & 0xFF
+            initBB = cv2.selectROI("Frame", frame, fromCenter=False, showCrosshair=True)
+            tracker = cv2.TrackerCSRT_create()
 
-    if key == ord("s"):
+            tracker.init(frame, initBB)
+            updateFlag = True
 
-        initBB = cv2.selectROI("Frame", frame, fromCenter=False, showCrosshair=True)
-        tracker = cv2.TrackerCSRT_create()
+        elif key == ord("q"):
+            break
 
-        tracker.init(frame, initBB)
-        updateFlag = True
+        elif key == ord("n"):
+            updateFlag = True
 
-    elif key == ord("q"):
-        break
+    vs.release()
 
-    elif key == ord("n"):
-        updateFlag = True
+    cv2.destroyAllWindows()
 
-vs.release()
+    return coordinates
 
-cv2.destroyAllWindows()
+if __name__ == "__main__":
 
-print(coordinates[:10])
+    res1 = trackObject("/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera1.webm")
+    #res2 = trackObject("/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera2.webm")
+
+    frames1 = [167, 181, 198, 223, 244, 262, 284, 308, 322, 346, 380, 410, 422, 433, 443, 452, 469, 483, 512]
+    frames2 = [27, 34, 42, 53, 63, 72, 82, 93, 100, 113, 127, 141, 147, 152, 157, 161, 168, 176, 189]
+
+    out1 = [res1[i] for i in frames1]
+    #out2 = [res2[i] for i in frames2]
+
+    print(f"{out1}")
