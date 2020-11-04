@@ -9,6 +9,7 @@ if __name__ == "__main__":
     if(args == "--r1"):
         exec(open("./intrinsicsCalibration.py").read())
     elif(args == "--r2"):
+        exec(open("./extractFrames.py").read())
         exec(open("./extrinsicsCalibration.py").read())
 
     elif(args == "--r3"):
