@@ -1,5 +1,25 @@
 import cv2
 import numpy as np
+import json
+
+def readIntrinsics(file):
+
+	with open(file, 'r') as file:
+
+		data = json.load(file)
+		data = json.loads(data)
+
+	return np.array(data["cameraMatrix1"]), np.array(data["cameraMatrix2"]), np.array(data["distortionVector1"]), np.array(data["distortionVector2"])
+
+def readExtrinsics(file):
+
+	with open(file, 'r') as file:
+
+		data = json.load(file)
+		data = json.loads(data)
+
+	return np.array(data["tVecs1"]), np.array(data["rotMatrix1"]), \
+		   np.array(data["tVecs2"]), np.array(data["rotMatrix2"])
 
 
 def calc_disparity(left_image, right_image):
@@ -20,22 +40,8 @@ def calc_disparity(left_image, right_image):
     stereoMatcherBM.setSpeckleRange(160)
     stereoMatcherBM.setSpeckleWindowSize(80)
 
-    stereoMatcherSGBM = cv2.StereoSGBM_create(
-        minDisparity=4,
-        numDisparities=6*16,  # max_disp has to be dividable by 16 f. E. HH 192, 256
-        blockSize=window_size,
-        P1=8 * 3 * window_size,
-        # wsize default 3; 5; 7 for SGBM reduced size image; 15 for SGBM full size image (1300px and above); 5 Works nicely
-        P2=32 * 3 * window_size,
-        disp12MaxDiff=1,
-        uniquenessRatio=10,
-        speckleWindowSize=80,
-        speckleRange=16,
-        preFilterCap=63,
-        mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY)
+    return stereoMatcherBM.compute(left_image_gray, right_image_gray).astype(np.float32) 
 
-
-    return stereoMatcherSGBM.compute(left_image_gray, right_image_gray).astype(np.float32) 
 
 if __name__ == "__main__":
 
@@ -44,13 +50,11 @@ if __name__ == "__main__":
     print(disparity)
 
     DEPTH_VISUALIZATION_SCALE = 2048
-    while(1):
-        cv2.imshow('depth', disparity / DEPTH_VISUALIZATION_SCALE)
 
-        if cv2.waitKey(20) & 0xFF == 27: 
+    disparityVisualized = disparity / DEPTH_VISUALIZATION_SCALE
+    
+    cv2.imwrite('disparity.png', disparity*255/2048)
 
-            cv2.destroyWindow('depth')
-            break
-            
+                
 
         

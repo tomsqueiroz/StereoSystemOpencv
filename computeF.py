@@ -123,6 +123,35 @@ def result(images, F):
 	cv2.imwrite('istortEpiline1.png', img1)
 	cv2.imwrite('istortEpiline2.png', img2)
 
+def calc_disparity(left_image, right_image):
+
+    window_size = 3
+
+    left_image = cv2.imread(left_image)
+    right_image = cv2.imread(right_image)
+
+    left_image_gray = cv2.cvtColor(left_image, cv2.COLOR_BGR2GRAY)
+    right_image_gray = cv2.cvtColor(right_image, cv2.COLOR_BGR2GRAY)
+
+    stereoMatcherBM = cv2.StereoBM_create()
+
+    stereoMatcherBM.setMinDisparity(-4)
+    stereoMatcherBM.setNumDisparities(128)
+    stereoMatcherBM.setBlockSize(5)
+    stereoMatcherBM.setSpeckleRange(160)
+    stereoMatcherBM.setSpeckleWindowSize(80)
+
+    return stereoMatcherBM.compute(left_image_gray, right_image_gray).astype(np.float32)
+
+def calc_depth(disparity, r, t, cm1, cm2, dc1, dc2):
+	
+	_3Dimage = None
+	RL, RR, PL, PR, Q, _, _ = cv2.stereoRectify(cm1, dc1, cm2, dc2, (1280, 720), r, t)
+	Q.reshape(4,4)
+
+	cv2.reprojectImageTo3D(disparity, _3Dimage, Q)
+	cv2.imshow('depth', _3Dimage)
+
 if __name__ == "__main__":
 
 	global imgPointsCam1
@@ -137,6 +166,17 @@ if __name__ == "__main__":
 	#print(f"\nE: {e}\nF: {f}")
 
 	result(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'], f)
+
+	disparity = calc_disparity('./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg')
+
+	DEPTH_VISUALIZATION_SCALE = 2048
+
+	disparityVisualized = disparity / DEPTH_VISUALIZATION_SCALE
+
+	cv2.imwrite('disparity.png', disparity*255/2048)
+
+	calc_depth(disparity, r, t, cm1, cm2, dc1, dc2)
+
 
 
 
