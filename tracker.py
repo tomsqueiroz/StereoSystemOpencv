@@ -71,13 +71,13 @@ def trackObject(path):
 
 if __name__ == "__main__":
 
-    res1 = trackObject("/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera1.webm")
-    #res2 = trackObject("/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera2.webm")
+    res1 = trackObject("./camera1.webm")
+    res2 = trackObject("./camera2.webm")
 
+    #Syncronized frames to be selected
     frames1 = [167, 181, 198, 223, 244, 262, 284, 308, 322, 346, 380, 410, 422, 433, 443, 452, 469, 483, 512]
     frames2 = [27, 34, 42, 53, 63, 72, 82, 93, 100, 113, 127, 141, 147, 152, 157, 161, 168, 176, 189]
-
     out1 = [res1[i] for i in frames1]
-    #out2 = [res2[i] for i in frames2]
+    out2 = [res2[i] for i in frames2]
 
     print(f"{out1}")

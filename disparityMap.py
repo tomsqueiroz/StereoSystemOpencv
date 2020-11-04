@@ -2,8 +2,6 @@ import numpy as np
 import cv2
 import json
 
-
-
 def stereoCalibration():
 
 	print("STEREO CALIBRATION...")

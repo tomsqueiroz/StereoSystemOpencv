@@ -12,33 +12,41 @@ def undistort(mtx, dist, distortedImage):
     #Undistort
     undistortedImage = cv2.undistort(distortedImage, mtx, dist, None, newcameramtx)
 
-    #Crop image
-    #x,y,w,h = roi
-    #dst = dst[y:y+h, x:x+w]
     return undistortedImage
 
 def generateUndistortedImagesFromVideo(mtx, dist, videoPath, cameraName):
-    print('Generating Undistorted Images for Camera: ' + cameraName)
+    print('Generating Undistorted frames for: ' + cameraName)
 
     path = createFolder(cameraName + "Undistorted")
 
     cap = cv2.VideoCapture(videoPath)
     i = 0
+
     while(cap.isOpened()):
+
         ret, frame = cap.read()
         if ret == False:
             break
 
-        frame = cv2.resize(frame, (1280, 720))
-        undistortedImage = undistort(mtx, dist, frame)
-        cv2.imwrite(path + '/' + cameraName + 'Undistorted' + str(i) + '.jpg', undistortedImage)
+        elif cameraName == 'camera1' and (i == 159 or i == 300):
+
+            frame = cv2.resize(frame, (1280, 720))
+            undistortedImage = undistort(mtx, dist, frame)
+            cv2.imwrite(path + '/' + cameraName + 'Undistorted' + str(i) + '.jpg', undistortedImage)
+
+        elif cameraName == 'camera2' and (i == 24 or i == 100):
+
+            frame = cv2.resize(frame, (1280, 720))
+            undistortedImage = undistort(mtx, dist, frame)
+            cv2.imwrite(path + '/' + cameraName + 'Undistorted' + str(i) + '.jpg', undistortedImage)
+
         i+=1
  
     cap.release()
     cv2.destroyAllWindows()
 
 def generateImagesFromVideo(videoPath, cameraName):
-    print('Generating Undistorted Images for Camera: ' + cameraName)
+    print('Generating frames for: ' + cameraName)
 
     path = createFolder(cameraName)
 
@@ -71,7 +79,18 @@ def createFolder(folderName):
     else:
         print ("Successfully created the directory %s " % (path + folderName))
 
+def readJson(file):
+
+    with open(file, 'r') as file:
+
+        data = json.load(file)
+        data = json.loads(data)
+
+    return np.array(data["cameraMatrix1"]), np.array(data["cameraMatrix2"]), np.array(data["distortionVector1"]), np.array(data["distortionVector2"])
+
 if __name__ == "__main__":
 
-    #generateImagesFromVideo('/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera1.webm', 'camera1')
-    #generateImagesFromVideo('/home/pedro/Documentos/UnB/PVC/StereoSystemOpencv/camera2.webm', 'camera2')
+    mtx1, mtx2, dist1, dist2 = readJson('intrinsicsCalibration.json')
+
+    generateUndistortedImagesFromVideo(mtx1, dist1, './camera1.webm', 'camera1')
+    generateUndistortedImagesFromVideo(mtx2, dist2, './camera2.webm', 'camera2')

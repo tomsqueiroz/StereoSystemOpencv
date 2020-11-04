@@ -44,9 +44,13 @@ def saveCalibrationFile(path):
 
     #Calibrate Camera 1
     ret1, mtx1, dist1, rvecs1, tvecs1 = calibration(path[0], "Camera 1")
+    print(f'\nMatriz de calibração:\n{mtx1}')
+    print(f'\nVetor de distorção:\n{dist1}')
     
     #Calibrate Camera 2
     ret2, mtx2, dist2, rvecs2, tvecs2 = calibration(path[1], "Camera 2")
+    print(f'\nMatriz de calibração:\n{mtx2}')
+    print(f'\nVetor de distorção:\n{dist2}')
 
   
     dic = {"cameraMatrix1": mtx1.tolist(), "cameraMatrix2": mtx2.tolist(), "distortionVector1": dist1.tolist(), "distortionVector2": dist2.tolist()}
@@ -56,11 +60,12 @@ def saveCalibrationFile(path):
 
         json.dump(dumpDic, file)
 
-    print("\nCalibration file generated!")
+    print("\nCalibration file intrinsicsCalibration.json generated!")
 
 
 if __name__ == "__main__":
 
-    path = pathSetup()
+    path = ['./Calibration1/*.jpg', './Calibration2/*.jpg']
+    #path = pathSetup()
 
     saveCalibrationFile(path)

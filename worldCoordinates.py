@@ -1,6 +1,11 @@
 import numpy as np
 import cv2
 import json
+from imutils.video import VideoStream
+from imutils.video import FPS
+import argparse
+import imutils
+import time
 
 def readIntrinsics(file):
 
@@ -31,7 +36,6 @@ def getWorldCoordinates(array1, array2):
 	'''
 	for i in range(len(array1)):
 
-		print(f"{i}")
 		if array1[i] == (-1, -1) or array2[i] == (-1, -1):
 
 			output.append(np.array([[-1], [-1], [-1]]))
@@ -57,89 +61,72 @@ def computeProjMatrix(mtx, rotMatrix, tVecs):
 
 	return np.matmul(mtx, aux)
 
-def getImagePoints(images):
+def trackObject(path):
 
-	for image, i in zip(images, [1, 2]):
+    vs = cv2.VideoCapture(path)
 
-		print("\nLoading image...")
+    initBB = None
+    updateFlag = True
+    coordinates = []
 
-		#Get clicks on image from set 1 and 2
-		img1 = cv2.imread(image)
-		cv2.namedWindow('select points')
-		cv2.setMouseCallback('select points', imageClick, param=i)
+    while True:
 
-		while(1):
+        if updateFlag == True:
+            ret, frame = vs.read()
 
-			cv2.imshow('select points', img1)
-			if cv2.waitKey(20) & 0xFF == 27: 
+            if not ret:
+                break
 
-				cv2.destroyWindow('select points')
-				break 
+            frame = cv2.resize(frame, (1280, 720))
+            (H, W) = frame.shape[:2]
 
-			elif(i == 1 and len(inputCam1) == 2) or (i == 2 and len(inputCam2) == 2):
+            if initBB is not None:
 
-				cv2.destroyWindow('select points')
-				break
+                updateFlag = True
+                (success, box) = tracker.update(frame)
 
-def imageClick(event, x, y, flags, param):
+                if success:
 
-    if event == cv2.EVENT_LBUTTONDOWN:
+                    (x, y, w, h) = [int(v) for v in box]
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    coordinates.append((x, y))
 
-        if param == 1:
+                else:
 
-            inputCam1.append([(x, y)])
+                    coordinates.append((-1, -1))
+                    updateFlag = False
 
-        elif param == 2:
+            else:
 
-            inputCam2.append([(x, y)])
+                coordinates.append((-1, -1))
+                updateFlag = False
 
-if __name__ == "__main__":
+        cv2.imshow("Frame", frame)
+        key = cv2.waitKey(1) & 0xFF
 
-	global mtx1
-	global mtx2
-	global tVecs1
-	global tVecs2
-	global rotMatrix1
-	global rotMatrix2
-	global inputCam1
-	global inputCam2
+        if key == ord("s"):
 
-	cam1 = [(455, 274), (454, 274), (455, 274), (481, 255), (605, 165), (700, 103), (764, 53), (821, 16), (852, -10), (-1, -1), (-1, -1), \
-	(-1, -1), (787, 35), (731, 77), (688, 117), (576, 188), (402, 342), (218, 495), (187, 522)]
+            initBB = cv2.selectROI("Frame", frame, fromCenter=False, showCrosshair=True)
+            tracker = cv2.TrackerCSRT_create()
 
-	cam2 = [(594, 307), (593, 306), (594, 307), (583, 285), (528, 159), (496, 70), (469, 11), (-1, -1), (-1, -1), (-1, -1), (-1, -1), \
-	(-1, -1), (-1, -1), (462, 35), (-1, -1), (529, 179), (583, 210), (740, 442), (860, 677)]
+            tracker.init(frame, initBB)
+            updateFlag = True
 
-	inputCam1 = []
-	inputCam2 = []
+        elif key == ord("q"):
+            break
 
-	inputCam1.append(cam1)
-	inputCam1.append([])
-	inputCam2.append(cam2)
-	inputCam2.append([])
+        elif key == ord("n"):
+            updateFlag = True
 
-	'''
-	getImagePoints(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'])
+    vs.release()
 
-	inputCam1[0] = [(-1, -1)]
-	print(f"\ncam1: {inputCam1}")
-	print(f"\ncam2: {inputCam2}")'''
+    cv2.destroyAllWindows()
 
-	mtx1, mtx2 = readIntrinsics('intrinsicsCalibration.json')
-	tVecs1, rotMatrix1, tVecs2, rotMatrix2 = readExtrinsics('extrinsicsCalibration.json')
-	#inputCam1, inputCam2 = readTrackedArrays()
+    return coordinates
 
-	#Get world coordinates for point 1 (top)
-	outputPoint1 = getWorldCoordinates(inputCam1[0], inputCam2[0])
+def savePointsToFile(array):
 
-	#Get world coordinates for point 2 (base)
-	#outputPoint2 = getWorldCoordinates(inputCam1[1], inputCam2[1])
-
-	#print(f"\nOutputPoint1: {outputPoint1}")
-	#print(f"\nOutputPoint2: {outputPoint2}")
-
-	convArr = [element.tolist() for element in outputPoint1]
-	print(convArr)
+	convArr = [element.tolist() for element in array]
 
 	dumpArr = json.dumps(convArr)
 
@@ -149,4 +136,30 @@ if __name__ == "__main__":
 
 	print("\nOutput file generated!")
 
+if __name__ == "__main__":
+
+	global mtx1
+	global mtx2
+	global tVecs1
+	global tVecs2
+	global rotMatrix1
+	global rotMatrix2
+
+	mtx1, mtx2 = readIntrinsics('intrinsicsCalibration.json')
+	tVecs1, rotMatrix1, tVecs2, rotMatrix2 = readExtrinsics('extrinsicsCalibration.json')
+
+	res2 = trackObject("./camera2.webm")
+	res1 = trackObject("./camera1.webm")
 	
+	#Syncronized frames to be selected
+	frames1 = [167, 181, 198, 223, 244, 262, 284, 308, 322, 346, 380, 410, 422, 433, 443, 452, 469, 483, 512]
+	frames2 = [27, 34, 42, 53, 63, 72, 82, 93, 100, 113, 127, 141, 147, 152, 157, 161, 168, 176, 189]
+	out1 = [res1[i] for i in frames1]
+	out2 = [res2[i] for i in frames2]
+
+	outputPoint = getWorldCoordinates(out1, out2)
+
+	#print(f"\nOutputPoint1: {outputPoint1}")
+	#print(f"\nOutputPoint2: {outputPoint2}")
+
+	savePointsToFile(outputPoint)

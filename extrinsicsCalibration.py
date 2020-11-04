@@ -6,7 +6,7 @@ import json
 def getImagePoints():
 
 	images = ['./camera1Undistorted/camera1Undistorted300.jpg', './camera2Undistorted/camera2Undistorted100.jpg']
-	print("\nDefine 4 image points to be used in extrinsic calibration or press ESC to leave:")
+	print("\nDefine the 4 image points A, B, C, D to be used in extrinsic calibration or press ESC to leave:")
 
 	for image, i in zip(images, [1, 2]):
 
@@ -60,7 +60,7 @@ def saveCalibrationFile():
 
 		json.dump(dumpDic, file)
 
-	print("\nCalibration file generated!")
+	print("\nCalibration file extrinsicsCalibration.json generated!")
 
 def getCamPosition():
 
@@ -73,14 +73,14 @@ def getCamPosition():
 	objectPoints = np.array([[0.0, 0.0, 0.0], [0.0, 1.4, 0.0], [2.6, 0.0, 0.0], [2.6, 1.4, 0.0]], dtype=np.float32)
 
 	#Camera 1: obtain extrinsic parameters for rotation and translation an then camera position in 3D coordinates
-	print("\nCamera 1...")
+	print("\nEstimating extrinsics for camera 1...")
 	ret1,rVecs1, tVecs1 = cv2.solvePnP(objectPoints, np.array(imgPointsCam1, dtype=np.float32), mtx1, dist1)
 	rotMatrix1 = cv2.Rodrigues(rVecs1)[0]
 	cameraPosition1 = -np.matrix(rotMatrix1).T * np.matrix(tVecs1)
 	print(f"\nrVecs {rVecs1}\ntVecs {tVecs1}\nrotMatrix {rotMatrix1}\ncamPos {cameraPosition1}")
 
 	#Camera 2: obtain extrinsic parameters for rotation and translation an then camera position in 3D coordinates
-	print("\nCamera 2...")
+	print("\nEstimating extrinsics for camera 2...")
 	ret2,rVecs2, tVecs2 = cv2.solvePnP(objectPoints, np.array(imgPointsCam2, dtype=np.float32), mtx2, dist2)
 	rotMatrix2 = cv2.Rodrigues(rVecs2)[0]
 	cameraPosition2 = -np.matrix(rotMatrix2).T * np.matrix(tVecs2)
