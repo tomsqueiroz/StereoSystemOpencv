@@ -165,7 +165,8 @@ if __name__ == "__main__":
 	retVal, cm1, dc1, cm2, dc2, r, t, e, f = stereoCalibration()
 	#print(f"\nE: {e}\nF: {f}")
 
-	result(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'], f)
+	#Codigo utilizado para printar linhas epipolares
+	#result(['./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg'], f)
 
 	disparity = calc_disparity('./camera1Undistorted/camera1Undistorted159.jpg', './camera2Undistorted/camera2Undistorted24.jpg')
 
@@ -173,9 +174,11 @@ if __name__ == "__main__":
 
 	disparityVisualized = disparity / DEPTH_VISUALIZATION_SCALE
 
+	
 	cv2.imwrite('disparity.png', disparity*255/2048)
+	print("Disparity Map Generated")
 
-	calc_depth(disparity, r, t, cm1, cm2, dc1, dc2)
+	#calc_depth(disparity, r, t, cm1, cm2, dc1, dc2)
 
 
 

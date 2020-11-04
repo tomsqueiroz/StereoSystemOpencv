@@ -22,15 +22,15 @@ def readExtrinsics(file):
 		   np.array(data["tVecs2"]), np.array(data["rotMatrix2"])
 
 
-def calc_disparity(left_image, right_image):
+def calc_disparity(image1, image2):
 
     window_size = 3
 
-    left_image = cv2.imread(left_image)
-    right_image = cv2.imread(right_image)
+    image1 = cv2.imread(image1)
+    image2 = cv2.imread(image2)
 
-    left_image_gray = cv2.cvtColor(left_image, cv2.COLOR_BGR2GRAY)
-    right_image_gray = cv2.cvtColor(right_image, cv2.COLOR_BGR2GRAY)
+    image1_gray = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+    image2_gray = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
     stereoMatcherBM = cv2.StereoBM_create()
 
@@ -40,7 +40,7 @@ def calc_disparity(left_image, right_image):
     stereoMatcherBM.setSpeckleRange(160)
     stereoMatcherBM.setSpeckleWindowSize(80)
 
-    return stereoMatcherBM.compute(left_image_gray, right_image_gray).astype(np.float32) 
+    return stereoMatcherBM.compute(image1_gray, image2_gray).astype(np.float32) 
 
 
 if __name__ == "__main__":
