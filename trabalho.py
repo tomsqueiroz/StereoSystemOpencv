@@ -17,3 +17,4 @@ if __name__ == "__main__":
 
     elif(args == "--r4"):
         exec(open("./worldCoordinates.py").read())
+        exec(open("./plot.py").read())
